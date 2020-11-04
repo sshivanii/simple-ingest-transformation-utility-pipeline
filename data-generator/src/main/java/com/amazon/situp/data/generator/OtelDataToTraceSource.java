@@ -103,9 +103,9 @@ public class OtelDataToTraceSource {
     public static void main(String[] args) throws UnsupportedEncodingException {
 
         String URL = args[0];
-        final ExportTraceServiceRequest exportTraceServiceRequest =
-                getExportTraceServiceRequest(getRandomResourceSpans(10));
         while (true) {
+            final ExportTraceServiceRequest exportTraceServiceRequest =
+                    getExportTraceServiceRequest(getRandomResourceSpans(10));
             sendExportTraceServiceRequestToSource(URL, exportTraceServiceRequest);
         }
     }
