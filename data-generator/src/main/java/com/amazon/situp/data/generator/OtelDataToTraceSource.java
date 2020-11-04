@@ -23,7 +23,6 @@ public class OtelDataToTraceSource {
     private static final Random RANDOM = new Random();
     private static final List<Span.SpanKind> SPAN_KINDS =
             Arrays.asList(Span.SpanKind.SPAN_KIND_CLIENT, Span.SpanKind.SPAN_KIND_CONSUMER, Span.SpanKind.SPAN_KIND_INTERNAL, Span.SpanKind.SPAN_KIND_PRODUCER, Span.SpanKind.SPAN_KIND_SERVER);
-    private static final String INDEX_NAME = "otel-v1-apm-span-data";
 
     /**
      * Build ExportTraceServiceRequest object, an array of ResourceSpans
@@ -46,9 +45,9 @@ public class OtelDataToTraceSource {
      * Returns a list of random ResourceSpans
      * @return List<ResourceSpans>
      */
-    private static List<ResourceSpans> getRandomResourceSpans() throws UnsupportedEncodingException {
+    private static List<ResourceSpans> getRandomResourceSpans(int size) throws UnsupportedEncodingException {
         final ArrayList<ResourceSpans> spansList = new ArrayList<>();
-        while(true) {
+        for(int i=0; i<size; i++) {
             spansList.add(
                     getResourceSpans(
                             UUID.randomUUID().toString(),
@@ -60,6 +59,7 @@ public class OtelDataToTraceSource {
                     )
             );
         }
+        return spansList;
     }
 
     /**
@@ -104,7 +104,9 @@ public class OtelDataToTraceSource {
 
         String URL = args[0];
         final ExportTraceServiceRequest exportTraceServiceRequest =
-                getExportTraceServiceRequest(getRandomResourceSpans());
-        sendExportTraceServiceRequestToSource(URL, exportTraceServiceRequest);
+                getExportTraceServiceRequest(getRandomResourceSpans(10));
+        while (true) {
+            sendExportTraceServiceRequestToSource(URL, exportTraceServiceRequest);
+        }
     }
 }
