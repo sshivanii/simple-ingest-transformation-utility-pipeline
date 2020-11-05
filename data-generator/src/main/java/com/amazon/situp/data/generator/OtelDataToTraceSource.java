@@ -26,10 +26,11 @@ public class OtelDataToTraceSource {
 
     /**
      * Build ExportTraceServiceRequest object, an array of ResourceSpans
+     *
      * @param spans
      * @return ExportTraceServiceRequest
      */
-    public static ExportTraceServiceRequest getExportTraceServiceRequest(List<ResourceSpans> spans){
+    public static ExportTraceServiceRequest getExportTraceServiceRequest(List<ResourceSpans> spans) {
         return ExportTraceServiceRequest.newBuilder()
                 .addAllResourceSpans(spans)
                 .build();
@@ -43,11 +44,12 @@ public class OtelDataToTraceSource {
 
     /**
      * Returns a list of random ResourceSpans
+     *
      * @return List<ResourceSpans>
      */
     private static List<ResourceSpans> getRandomResourceSpans(int size) throws UnsupportedEncodingException {
         final ArrayList<ResourceSpans> spansList = new ArrayList<>();
-        for(int i=0; i<size; i++) {
+        for (int i = 0; i < size; i++) {
             spansList.add(
                     getResourceSpans(
                             UUID.randomUUID().toString(),
@@ -55,7 +57,10 @@ public class OtelDataToTraceSource {
                             getRandomBytes(8),
                             getRandomBytes(8),
                             getRandomBytes(16),
-                            SPAN_KINDS.get(RANDOM.nextInt(SPAN_KINDS.size()))
+                            SPAN_KINDS.get(RANDOM.nextInt(SPAN_KINDS.size())),
+                            System.nanoTime() - 100,
+                            System.nanoTime()
+
                     )
             );
         }
@@ -64,11 +69,14 @@ public class OtelDataToTraceSource {
 
     /**
      * Builds a ResourceSpan
-     * @params serviceName, spanName, spanId, parentId, traceId, spanKind
+     *
      * @return ResourceSpan
+     * @params serviceName, spanName, spanId, parentId, traceId, spanKind
      */
-    public static ResourceSpans getResourceSpans(final String serviceName, final String spanName, final byte[]
-            spanId, final byte[] parentId, final byte[] traceId, final Span.SpanKind spanKind) throws UnsupportedEncodingException {
+    public static ResourceSpans getResourceSpans(
+            final String serviceName, final String spanName, final byte[] spanId, final byte[] parentId,
+            final byte[] traceId, final Span.SpanKind spanKind, final long startTime, final long endTime)
+            throws UnsupportedEncodingException {
         final ByteString parentSpanId = parentId != null ? ByteString.copyFrom(parentId) : ByteString.EMPTY;
         return ResourceSpans.newBuilder()
                 .setResource(
@@ -88,6 +96,8 @@ public class OtelDataToTraceSource {
                                                 .setSpanId(ByteString.copyFrom(spanId))
                                                 .setParentSpanId(parentSpanId)
                                                 .setTraceId(ByteString.copyFrom(traceId))
+                                                .setStartTimeUnixNano(startTime)
+                                                .setEndTimeUnixNano(endTime)
                                                 .build()
                                 )
                                 .build()
@@ -105,7 +115,7 @@ public class OtelDataToTraceSource {
         String URL = args[0];
         while (true) {
             final ExportTraceServiceRequest exportTraceServiceRequest =
-                    getExportTraceServiceRequest(getRandomResourceSpans(10));
+                    getExportTraceServiceRequest(getRandomResourceSpans(15));
             sendExportTraceServiceRequestToSource(URL, exportTraceServiceRequest);
         }
     }
