@@ -58,8 +58,8 @@ public class OtelDataToTraceSource {
                             getRandomBytes(8),
                             getRandomBytes(16),
                             SPAN_KINDS.get(RANDOM.nextInt(SPAN_KINDS.size())),
-                            System.nanoTime() - 100,
-                            System.nanoTime()
+                            System.nanoTime(),
+                            System.nanoTime() + 1L
 
                     )
             );
