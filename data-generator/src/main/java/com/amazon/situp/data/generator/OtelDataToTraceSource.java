@@ -12,6 +12,7 @@ import io.opentelemetry.proto.trace.v1.ResourceSpans;
 import io.opentelemetry.proto.trace.v1.Span;
 
 import java.io.UnsupportedEncodingException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -58,9 +59,8 @@ public class OtelDataToTraceSource {
                             getRandomBytes(8),
                             getRandomBytes(16),
                             SPAN_KINDS.get(RANDOM.nextInt(SPAN_KINDS.size())),
-                            System.nanoTime(),
-                            System.nanoTime() + 1L
-
+                            Instant.now().toEpochMilli()*1000000L,
+                            Instant.now().toEpochMilli()*1000000L
                     )
             );
         }
@@ -105,18 +105,30 @@ public class OtelDataToTraceSource {
                 .build();
     }
 
-    private static void sendExportTraceServiceRequestToSource(String URL, ExportTraceServiceRequest request) {
-        final TraceServiceGrpc.TraceServiceBlockingStub client = Clients.newClient(URL, TraceServiceGrpc.TraceServiceBlockingStub.class);
+    private static void sendExportTraceServiceRequestToSource(String URL, ExportTraceServiceRequest request, final TraceServiceGrpc.TraceServiceBlockingStub client) {
         client.export(request);
     }
 
-    public static void main(String[] args) throws UnsupportedEncodingException {
-
+    public static void main(String[] args) throws UnsupportedEncodingException, InterruptedException {
         String URL = args[0];
+        int batchSize = Integer.parseInt(args[1]);
+        int batchesPerSecond = Integer.parseInt(args[2]);
+        long millisPerBatch = 1000L/(long)batchesPerSecond;
+        final TraceServiceGrpc.TraceServiceBlockingStub client = Clients.newClient(URL, TraceServiceGrpc.TraceServiceBlockingStub.class);
+        long nextBatch = System.currentTimeMillis();
         while (true) {
-            final ExportTraceServiceRequest exportTraceServiceRequest =
-                    getExportTraceServiceRequest(getRandomResourceSpans(15));
-            sendExportTraceServiceRequestToSource(URL, exportTraceServiceRequest);
+            try {
+                if(System.currentTimeMillis() < nextBatch) {
+                    Thread.sleep(nextBatch - System.currentTimeMillis());
+                }
+                nextBatch += millisPerBatch;
+                final ExportTraceServiceRequest exportTraceServiceRequest =
+                        getExportTraceServiceRequest(getRandomResourceSpans(batchSize));
+                sendExportTraceServiceRequestToSource(URL, exportTraceServiceRequest, client);
+            } catch (Exception e) {
+                System.out.println("Caught exception: " + e.getMessage());
+                Thread.sleep(10);
+            }
         }
     }
 }
